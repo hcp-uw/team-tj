@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1035352331752",
+    "project_id": "verifai-9b6f0",
+    "storage_bucket": "verifai-9b6f0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1035352331752:android:7140167cd4370f33de405d",
+        "android_client_info": {
+          "package_name": "com.example.verifai"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDyU7gAA6S2zC0cIZ0lbKMcd2c9ZW8DgkU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
