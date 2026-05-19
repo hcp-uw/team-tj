@@ -2,66 +2,41 @@ package com.example.verifai.network
 
 import com.example.verifai.BuildConfig
 import java.io.File
-import java.util.concurrent.TimeUnit
+import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.asRequestBody
-import org.json.JSONObject
+import okhttp3.RequestBody.Companion.toRequestBody
 
-data class ApiAnalysisResult(
-    val label: String,
-    val confidence: Double?,
-    val explanation: String,
-)
-
+/**
+ * Calls the FastAPI `/analyze` endpoint using the same stack as [NetworkModule].
+ * Base URL comes from `api.base.url` in `android/local.properties` (see [BuildConfig.API_BASE_URL]).
+ */
 object VerifAiApiClient {
 
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(60, TimeUnit.SECONDS)
-        .readTimeout(120, TimeUnit.SECONDS)
-        .writeTimeout(60, TimeUnit.SECONDS)
-        .build()
+    suspend fun analyze(file: File): ApiAnalysisResult = withContext(Dispatchers.IO) {
+        val bytes = file.readBytes()
+        if (bytes.isEmpty()) {
+            throw IOException("Empty image file")
+        }
+        val safeName = file.name.ifBlank { "image.jpg" }
+        val body = bytes.toRequestBody("image/*".toMediaTypeOrNull())
+        val part = MultipartBody.Part.createFormData("file", safeName, body)
 
-    suspend fun analyze(imageFile: File): ApiAnalysisResult = withContext(Dispatchers.IO) {
-        val requestBody = imageFile.asRequestBody("image/png".toMediaType())
-        val multipart = MultipartBody.Builder()
-            .setType(MultipartBody.FORM)
-            .addFormDataPart("file", imageFile.name, requestBody)
-            .build()
-
-        val request = Request.Builder()
-            .url("${BuildConfig.API_BASE_URL.trimEnd('/')}/analyze")
-            .post(multipart)
-            .build()
-
-        client.newCall(request).execute().use { response ->
-            val body = response.body?.string().orEmpty()
-            if (!response.isSuccessful) {
-                val detail = runCatching {
-                    JSONObject(body).optString("detail", body)
-                }.getOrDefault(body)
-                throw IllegalStateException("Analysis failed (${response.code}): $detail")
-            }
-
-            val json = JSONObject(body)
-            if (json.optString("status") != "success") {
-                throw IllegalStateException(json.optString("error", "Analysis failed"))
-            }
-
-            val result = json.getJSONObject("result")
-            ApiAnalysisResult(
-                label = result.getString("label"),
-                confidence = if (result.has("confidence") && !result.isNull("confidence")) {
-                    result.getDouble("confidence")
-                } else {
-                    null
-                },
-                explanation = result.getString("explanation"),
+        val response = try {
+            NetworkModule.api.analyzeImage(part)
+        } catch (e: Exception) {
+            throw IOException(
+                "Cannot reach backend at ${BuildConfig.API_BASE_URL}. " +
+                    "Start the server (python server.py in backend/) and set api.base.url in local.properties if needed.",
+                e,
             )
+        }
+
+        when {
+            response.status == "success" && response.result != null -> response.result!!
+            else -> throw IOException(response.error ?: "Analysis failed")
         }
     }
 }

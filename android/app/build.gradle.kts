@@ -13,7 +13,7 @@ val localProperties = Properties().apply {
         load(localPropertiesFile.inputStream())
     }
 }
-val apiBaseUrl: String = localProperties.getProperty("api.base.url", "http://10.0.2.2:8000")
+val apiBaseUrl: String = localProperties.getProperty("api.base.url", "http://10.0.2.2:8080")
 
 android {
     namespace = "com.example.verifai"
@@ -64,7 +64,6 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp.logging)
-    implementation(libs.coil.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.service)

@@ -153,9 +153,18 @@ Returns server status.
 5. Download `google-services.json` and place it in `android/app/`
 6. Set your backend URL in `android/local.properties` (optional; defaults to emulator host):
    ```properties
-   api.base.url=http://10.0.2.2:8000
+   api.base.url=http://10.0.2.2:8080
    ```
-   For a physical device, use your computer's LAN IP, e.g. `http://192.168.1.10:8000`
+   For a physical device, use your computer's LAN IP, e.g. `http://192.168.1.10:8080`
+
+### Firebase `PERMISSION_DENIED`
+
+If the app shows **`PERMISSION_DENIED: Missing or insufficient permissions`**, the signed-in user is fine but **Firestore or Storage is rejecting writes**. Typical causes:
+
+1. **Rules not published** — In Firebase Console, open **Firestore → Rules** and **Storage → Rules**, then paste the contents of `firebase/firestore.rules` and `firebase/storage.rules` from this repo and **Publish**.
+2. **Firestore or Storage not enabled** — Create a default database and default bucket if the console prompts you.
+
+Until rules allow `users/{uid}/…`, cloud history may stay empty; the app still runs inference if the Python backend is up.
 
 ### Building
 
