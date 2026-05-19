@@ -49,16 +49,13 @@ User (Android App)
 ## Repository Structure
 
 ```
-VerifAI/
-├── app/                        # Android application (Kotlin)
-│   └── src/
-│       └── main/
-│           ├── java/           # Kotlin source files
-│           └── res/            # Layouts, drawables, strings
-├── backend/
-│   └── server.py               # FastAPI inference server
-├── model/
-│   └── fakeVLM_model/          # Downloaded model weights (not tracked)
+team-tj/
+├── android/                    # Android application (Kotlin)
+│   └── app/
+│       └── src/main/           # Kotlin source, layouts, resources
+├── backend/                    # FastAPI inference server
+│   ├── server.py               # Entry point (python server.py)
+│   └── app/                    # API routes, model handler, config
 └── README.md
 ```
 
@@ -78,7 +75,7 @@ VerifAI/
 ```bash
 # Clone the repository
 git clone https://github.com/hcp-uw/team-tj.git
-cd VerifAI
+cd team-tj
 
 # Create and activate the conda environment
 conda create -n fakevlm python=3.10 -y
@@ -93,14 +90,16 @@ pip install transformers accelerate bitsandbytes
 pip install fastapi uvicorn python-multipart Pillow
 
 # Download the FakeVLM model weights
-huggingface-cli download lingcco/fakeVLM --local-dir ./model/fakeVLM_model
+cd backend
+huggingface-cli download lingcco/fakeVLM --local-dir ./FakeVLM/fakeVLM_model
 ```
 
 ### Running the Server
 
 ```bash
 conda activate fakevlm
-python backend/server.py
+cd backend
+python server.py
 ```
 
 The server starts on `http://0.0.0.0:8080`.

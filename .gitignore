@@ -36,6 +36,7 @@ render.experimental.xml
 # model
 model/
 fakeVLM_model/
+backend/FakeVLM/
 *.safetensors
 *.bin
 __pycache__/
