@@ -148,8 +148,14 @@ Returns server status.
 
 1. Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
 2. Enable **Email/Password** authentication
-3. Download `google-services.json` and place it in `app/`
-4. Update the server URL in the app to point to your backend
+3. Enable **Cloud Storage** and **Firestore Database**
+4. Deploy security rules from `firebase/storage.rules` and `firebase/firestore.rules` (Firebase Console → Rules)
+5. Download `google-services.json` and place it in `android/app/`
+6. Set your backend URL in `android/local.properties` (optional; defaults to emulator host):
+   ```properties
+   api.base.url=http://10.0.2.2:8000
+   ```
+   For a physical device, use your computer's LAN IP, e.g. `http://192.168.1.10:8000`
 
 ### Building
 
