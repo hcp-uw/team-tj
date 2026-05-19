@@ -1,3 +1,25 @@
 <resources>
     <string name="app_name">VerifAI</string>
+    <string name="qs_tile_label">VerifAI</string>
+    <string name="qs_tile_subtitle">Capture region</string>
+    <string name="notification_channel_name">Quick Settings</string>
+    <string name="notification_channel_description">Notifications from the VerifAI Quick Settings tile</string>
+    <string name="notification_clicked_title">VerifAI</string>
+    <string name="notification_clicked_text">clicked</string>
+    <string name="notification_select_region_title">Select capture area</string>
+    <string name="notification_select_region_text">Drag on screen to select a region</string>
+    <string name="notification_capturing_title">Capturing screen</string>
+    <string name="notification_capturing_text">Please wait…</string>
+    <string name="notification_saved_title">Screenshot saved</string>
+    <string name="notification_saved_text">Saved %1$s</string>
+    <string name="notification_failed_title">Screenshot failed</string>
+    <string name="notification_failed_text">Could not capture the selected area.</string>
+    <string name="notification_analyzing_title">Analyzing capture</string>
+    <string name="notification_analyzing_text">Uploading and running detection…</string>
+    <string name="notification_analysis_done_title">Analysis complete</string>
+    <string name="notification_analysis_done_text">Result: %1$s</string>
+    <string name="notification_analysis_failed_title">Analysis failed</string>
+    <string name="notification_analysis_failed_text">Could not analyze the capture.</string>
+    <string name="notification_sign_in_title">Sign in required</string>
+    <string name="notification_sign_in_text">Open VerifAI and sign in to upload and analyze captures.</string>
 </resources>
