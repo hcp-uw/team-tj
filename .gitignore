@@ -32,3 +32,12 @@ render.experimental.xml
 
 # Android Profiling
 *.hprof
+
+# model
+model/
+fakeVLM_model/
+*.safetensors
+*.bin
+__pycache__/
+*.pyc
+.env
