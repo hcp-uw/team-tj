@@ -18,6 +18,9 @@ data class ApiAnalysisResult(
     val explanation: String,
 )
 
+/** Alias for older UI code (e.g. [com.example.verifai.ui.analysis.AnalysisScreen]). */
+typealias AnalysisResult = ApiAnalysisResult
+
 object VerifAiApiClient {
 
     private val client = OkHttpClient.Builder()
@@ -27,7 +30,8 @@ object VerifAiApiClient {
         .build()
 
     suspend fun analyze(imageFile: File): ApiAnalysisResult = withContext(Dispatchers.IO) {
-        val requestBody = imageFile.asRequestBody("image/png".toMediaType())
+        val mime = guessImageMimeType(imageFile.name)
+        val requestBody = imageFile.asRequestBody(mime.toMediaType())
         val multipart = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
             .addFormDataPart("file", imageFile.name, requestBody)
@@ -62,6 +66,18 @@ object VerifAiApiClient {
                 },
                 explanation = result.getString("explanation"),
             )
+        }
+    }
+
+    private fun guessImageMimeType(fileName: String): String {
+        val ext = fileName.substringAfterLast('.', "").lowercase()
+        return when (ext) {
+            "jpg", "jpeg" -> "image/jpeg"
+            "webp" -> "image/webp"
+            "gif" -> "image/gif"
+            "bmp" -> "image/bmp"
+            "png" -> "image/png"
+            else -> "image/jpeg"
         }
     }
 }

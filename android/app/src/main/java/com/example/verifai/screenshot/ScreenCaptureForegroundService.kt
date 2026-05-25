@@ -109,10 +109,10 @@ class ScreenCaptureForegroundService : Service() {
             val savedFile = ScreenCaptureHelper.saveBitmap(this, cropped)
             cropped.recycle()
 
-            val analysisId = runBlocking {
+            val analysisRecord = runBlocking {
                 ImageAnalysisWorkflow.processImage(applicationContext, savedFile)
             }
-            if (analysisId == null && FirebaseAuth.getInstance().currentUser == null) {
+            if (analysisRecord == null && FirebaseAuth.getInstance().currentUser == null) {
                 NotificationHelper.showScreenshotSavedNotification(this, savedFile)
             }
         } catch (_: Exception) {

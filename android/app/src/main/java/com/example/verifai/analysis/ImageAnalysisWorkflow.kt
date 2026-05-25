@@ -1,9 +1,13 @@
 package com.example.verifai.analysis
 
 import android.content.Context
+import android.net.Uri
+import com.example.verifai.data.AnalysisRecord
 import com.example.verifai.data.AnalysisRepository
+import com.example.verifai.data.AnalysisStatus
 import com.example.verifai.network.VerifAiApiClient
 import com.example.verifai.notifications.NotificationHelper
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import java.io.File
 import java.util.UUID
@@ -14,7 +18,11 @@ object ImageAnalysisWorkflow {
 
     private val repository = AnalysisRepository()
 
-    suspend fun processImage(context: Context, localFile: File): String? = withContext(Dispatchers.IO) {
+    /**
+     * Runs ML inference first, then tries Firestore + Storage. If Firebase fails (e.g.
+     * PERMISSION_DENIED), the API result is still returned for the Result screen.
+     */
+    suspend fun processImage(context: Context, localFile: File): AnalysisRecord? = withContext(Dispatchers.IO) {
         val userId = FirebaseAuth.getInstance().currentUser?.uid
         if (userId == null) {
             NotificationHelper.showSignInRequiredNotification(context)
@@ -24,24 +32,46 @@ object ImageAnalysisWorkflow {
         val analysisId = UUID.randomUUID().toString()
 
         try {
-            repository.createPendingRecord(userId, analysisId, localFile.name)
             NotificationHelper.showAnalyzingNotification(context)
 
-            repository.uploadImage(userId, analysisId, localFile)
             val result = VerifAiApiClient.analyze(localFile)
-            repository.saveAnalysisResult(userId, analysisId, result)
+
+            var imageUrl: String?
+            try {
+                repository.createPendingRecord(userId, analysisId, localFile.name)
+                val upload = repository.uploadImage(userId, analysisId, localFile)
+                imageUrl = upload.downloadUrl
+                repository.saveAnalysisResult(userId, analysisId, result)
+            } catch (e: Exception) {
+                runCatching {
+                    repository.markFailed(userId, analysisId, e.message)
+                }
+                imageUrl = Uri.fromFile(localFile).toString()
+            }
 
             NotificationHelper.showAnalysisCompleteNotification(
                 context = context,
                 verdict = formatVerdict(result.label),
             )
-            analysisId
+
+            AnalysisRecord(
+                id = analysisId,
+                imageUrl = imageUrl,
+                imagePath = null,
+                fileName = localFile.name,
+                label = result.label,
+                confidence = result.confidence,
+                explanation = result.explanation,
+                status = AnalysisStatus.COMPLETE,
+                errorMessage = null,
+                createdAt = Timestamp.now(),
+            )
         } catch (e: Exception) {
             runCatching {
                 repository.markFailed(userId, analysisId, e.message)
             }
             NotificationHelper.showAnalysisFailedNotification(context, e.message)
-            null
+            throw e
         }
     }
 
