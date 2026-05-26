@@ -41,13 +41,17 @@ class VerifAIViewModel(application: Application) : AndroidViewModel(application)
     private val _selectedAnalysisId = MutableStateFlow<String?>(null)
     val selectedAnalysisId: StateFlow<String?> = _selectedAnalysisId.asStateFlow()
 
+    /** Latest upload/capture result when Firestore has not synced yet (or rules block writes). */
+    private val _latestProcessRecord = MutableStateFlow<AnalysisRecord?>(null)
+
     val selectedAnalysis: StateFlow<AnalysisRecord?> = combine(
         _analyses,
         _selectedAnalysisId,
-    ) { records, id ->
+        _latestProcessRecord,
+    ) { records, id, latest ->
         when {
-            id != null -> records.find { it.id == id }
-            else -> records.firstOrNull { it.status == AnalysisStatus.COMPLETE }
+            id != null -> records.find { it.id == id } ?: latest?.takeIf { it.id == id }
+            else -> records.firstOrNull { it.status == AnalysisStatus.COMPLETE } ?: latest
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
@@ -68,6 +72,7 @@ class VerifAIViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun onImagePicked(uri: Uri) {
+        _latestProcessRecord.value = null
         _uploadState.update { it.copy(previewUri = uri, error = null) }
     }
 
@@ -77,17 +82,23 @@ class VerifAIViewModel(application: Application) : AndroidViewModel(application)
             _uploadState.update { it.copy(isLoading = true, error = null) }
             try {
                 val file = copyUriToCache(uri)
-                val analysisId = ImageAnalysisWorkflow.processImage(getApplication(), file)
-                if (analysisId != null) {
-                    _selectedAnalysisId.value = analysisId
+                val record = ImageAnalysisWorkflow.processImage(getApplication(), file)
+                if (record != null) {
+                    _latestProcessRecord.value = record
+                    _selectedAnalysisId.value = record.id
                     _navigateToResult.emit(Unit)
-                } else if (auth.currentUser != null) {
+                } else {
                     _uploadState.update {
-                        it.copy(error = "Analysis failed. Check that the backend is running and api.base.url is set.")
+                        it.copy(error = "Could not start analysis. Sign in and try again.")
                     }
                 }
             } catch (e: Exception) {
-                _uploadState.update { it.copy(error = e.message ?: "Analysis failed") }
+                _uploadState.update {
+                    it.copy(
+                        error = e.message
+                            ?: "Analysis failed. Start the backend (python server.py) and set api.base.url in android/local.properties if needed.",
+                    )
+                }
             } finally {
                 _uploadState.update { it.copy(isLoading = false) }
             }
@@ -95,6 +106,7 @@ class VerifAIViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun selectAnalysis(record: AnalysisRecord) {
+        _latestProcessRecord.value = null
         _selectedAnalysisId.value = record.id
         viewModelScope.launch { _navigateToResult.emit(Unit) }
     }
